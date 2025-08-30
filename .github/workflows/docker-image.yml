@@ -1,0 +1,31 @@
+name: Run Presenton with UI
+
+on:
+  workflow_dispatch:   # 手动触发
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Presenton container
+        run: |
+          docker run -d -p 80:80 --name presenton ghcr.io/presenton/presenton:latest
+          sleep 20
+          docker ps -a
+          docker logs presenton
+
+      - name: Install cloudflared
+        run: |
+          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
+            -o cloudflared
+          chmod +x cloudflared
+
+      - name: Expose Presenton UI
+        run: |
+          ./cloudflared tunnel --url http://localhost:80 > cloudflared.log 2>&1 &
+          sleep 10
+          grep -o 'https://.*trycloudflare.com' cloudflared.log
