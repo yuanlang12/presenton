@@ -8,9 +8,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ 拉取仓库代码（虽然这里我们只用镜像）
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ 运行 Presenton 容器
       - name: Run Presenton container
         run: |
           docker run -d -p 80:80 --name presenton ghcr.io/presenton/presenton:latest
@@ -18,14 +20,18 @@ jobs:
           docker ps -a
           docker logs presenton
 
+      # 3️⃣ 安装 cloudflared
       - name: Install cloudflared
         run: |
           curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
             -o cloudflared
           chmod +x cloudflared
 
-      - name: Expose Presenton UI
+      # 4️⃣ 暴露临时公网 URL（不需要注册）
+      - name: Expose Presenton UI via temporary URL
         run: |
+          # 后台启动 tunnel
           ./cloudflared tunnel --url http://localhost:80 > cloudflared.log 2>&1 &
           sleep 10
+          # 输出临时 URL
           grep -o 'https://.*trycloudflare.com' cloudflared.log
